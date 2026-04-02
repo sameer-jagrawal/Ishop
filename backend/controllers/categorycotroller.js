@@ -1,26 +1,34 @@
 const categoryModel = require("../models/CategoryModel");
 const {sendBadReaquest,sendConflict,sendCreated,sendDelete,sendNotFound,sendServerError,sendSuccess,sendupdate} = require("../utils/response")
+const {imageName,} = require("../utils/helper")
 // console.log(categoryModel)
 // create api
 const create = async (req,res)=>{
     try {
         // console.log(req.body) 
         // res.send("sameer")
-        const {name,slug} = req.body;
-        if(!name || !slug){
+        const {name,slug,} = req.body;
+        const image = req.files?.image;
+        console.log(image)
+        if(!name || !slug || !image){
             return sendBadReaquest(res,"All feild are required")
         }
-        const existCategory =  await categoryModel.findOne({name});
+        const existCategory =  await categoryModel.findOne({slug});
         if(existCategory){
             return sendConflict(res)
         }
-        
-        await categoryModel.create({name,slug})
+        const imagename = imageName(image.name)
+       const destination = `./public/category/${imagename}`;
+        image.mv(destination, async(error) =>{
+            if(error) return sendServerError (res, "image not upload");
+            const data =   await categoryModel.create({name,slug,image:imagename});
 
-        sendCreated(res)
-
+             return sendCreated(res,"Created Successfully",data)  
+        })
+      
     } catch (error) {
         console.log(error)
+        return sendServerError(res, "Something went wrong");
     }
 }
 
@@ -52,7 +60,6 @@ const readById = async (req,res)=>{
     }
 }
 
-// readby id
 
 
 // update api
@@ -77,6 +84,23 @@ const update = async (req,res)=>{
         console.log(error)
     }
 }
+
+// delete api
+
+const deleteById = async (req,res)=>{
+    try {
+        const id = req.params.id 
+        const category = await categoryModel.findById(id)
+        // console.log(category)
+        if(category){
+           await categoryModel.findByIdAndDelete(id)
+        } 
+        sendDelete(res)
+    } catch (error) {
+       sendServerError(res)
+    }
+}
+
 module.exports = {
-    create,read,update,readById
+    create,read,update,readById,deleteById
 }
