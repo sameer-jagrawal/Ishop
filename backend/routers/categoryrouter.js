@@ -1,15 +1,27 @@
-const categoryRouter = require("express").Router();
+const categoryrouter = require("express").Router();
 
-const {create,read,update,readById,deleteById} = require("../controllers/categorycotroller")
-const fileUploader = require("express-fileupload")
-categoryRouter.post("/create", fileUploader({createParentPath:true}), create);
-categoryRouter.get("/", read)
-categoryRouter.patch("/update-status/:id",update)
-categoryRouter.get("/:id", readById)
-categoryRouter.delete("/delete/:id", deleteById)
+const {
+  create,
+  read,
+  deleteById,
+  updateDataBySlug,
+  readBySlug,
+  updateById
+} = require("../controllers/categorycotroller");
+const fileUploader = require("express-fileupload");
+categoryrouter.post(
+  "/create",
+  fileUploader({ createParentPath: true }),
+  create,
+);
+categoryrouter.get("/", read);
+categoryrouter.get("/:slug", readBySlug);
+categoryrouter.delete("/delete/:id", deleteById)
+categoryrouter.put("/update/:id", updateById)
+categoryrouter.put("/edit/:slug",fileUploader({ createParentPath: true }),updateDataBySlug,);
 
 
 
 
 
-module.exports = categoryRouter;
+module.exports = categoryrouter;

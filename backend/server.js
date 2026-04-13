@@ -7,6 +7,12 @@
  app.use(express.json());
  app.use(express.static("./public"))
  app.use("/api/category", require("./routers/categoryrouter"))
+ app.use("/api/brand", require("./routers/brand.router"))
+ app.use("/api/color", require("./routers/color.router"))
+ app.use("/api/product", require("./routers/product.router"))
+
+
+
 
 
  mongoose.connect(process.env.MONGODB_URL).then(

@@ -5,9 +5,7 @@ const {imageName,} = require("../utils/helper")
 // create api
 const create = async (req,res)=>{
     try {
-        // console.log(req.body) 
-        // res.send("sameer")
-        const {name,slug,} = req.body;
+        const {name,slug} = req.body;
         const image = req.files?.image;
         console.log(image)
         if(!name || !slug || !image){
@@ -37,16 +35,22 @@ const read = async (req,res)=>{
     try {
         // console.log(req.body)
         const category = await categoryModel.find()
+        const total = await categoryModel.countDocuments()
         console.log(category)
         if(category){
-            return sendSuccess(res,"success",category)
+            return sendSuccess(res,"success",category,{
+            total,
+            imagebaseurl : "http://localhost:5000/category/"
+            })
         }
+
     } catch (error) {
        sendServerError(res)
     }
 }
 
 // readbyid
+
 const readById = async (req,res)=>{
     try {
         const id = req.params.id 
@@ -60,10 +64,27 @@ const readById = async (req,res)=>{
     }
 }
 
+// read by slug
+const readBySlug = async (req, res) => {
+    try {
+        const slug = req.params.slug;
 
+        const category = await categoryModel.findOne({ slug: slug });
+
+        if (category) {
+            return sendSuccess(res, "success", category,{
+                image:"http://localhost:5000/category"
+            });
+        } else {
+            return sendNotFound(res, "Category not found");
+        }
+    } catch (error) {
+        return sendServerError(res);
+    }
+};
 
 // update api
-const update = async (req,res)=>{
+const updateById = async (req,res)=>{
     try {
         const {feild} = req.body;
         const id =  (req.params.id)
@@ -79,11 +100,67 @@ const update = async (req,res)=>{
             [feild] : !category[feild]
         })
 
-        sendupdate(res,"updated",newRecord)
+        sendupdate(res,"status updated successfully",newRecord)
     } catch (error) {
         console.log(error)
+        return sendServerError(res,)
     }
 }
+
+// update category data 
+
+const updateDataBySlug = async (req, res) => {
+    try {
+      const { slug } = req.params;
+      const { name, slug: newSlug, } = req.body;
+      const image = req.files?.image;
+      if (!name || !slug) {
+        return sendBadReaquest(res, "Name and slug required");
+      }
+  
+      const category = await categoryModel.findOne({ slug });
+      if (!category) {
+        return sendNotFound(res, "Category not found");
+      }
+  
+      if (newSlug) {
+        const existCategory = await categoryModel.findOne({ slug: newSlug });
+        if (existCategory && existCategory.slug !== slug) {
+          return sendConflict(res, "Slug already exists");
+        }
+      }
+  
+      let updateData = {
+        name,
+        slug: newSlug || slug
+      };
+  
+      // handle image
+      if (image) {
+        const imagename = imageName(image.name);
+        const destination = `./public/category/${imagename}`;
+  
+        await image.mv(destination);
+        updateData.image = imagename;
+      }
+  
+      const updated = await categoryModel.findOneAndUpdate(
+        { slug },
+        updateData,
+        { new: true }
+      );
+      
+      
+      return sendupdate(res, "Updated Successfully", updated,{
+        imagebaseurl : "http://localhost:5000/category/"
+      });
+  
+    } catch (error) {
+      console.log(error);
+      return sendServerError(res, "Something went wrong");
+    }
+  };
+
 
 // delete api
 
@@ -102,5 +179,5 @@ const deleteById = async (req,res)=>{
 }
 
 module.exports = {
-    create,read,update,readById,deleteById
+    create,read,updateById,readById,deleteById,readBySlug,updateDataBySlug
 }

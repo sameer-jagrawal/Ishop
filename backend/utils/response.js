@@ -1,9 +1,10 @@
 // success response 
-const sendSuccess = (res, masg = "Success", data = {})=>{
+const sendSuccess = (res, masg = "Success", data = {},meta = {})=>{
     return res.status(200).json({
         success :  true,
         masg,
-        data
+        data,
+        meta
     })
 }
 
@@ -17,11 +18,12 @@ const sendCreated  = (res, masg = "Created Successfully ", data = {})=>{
 }
 
 // update response
-const sendupdate  = (res, masg = "Updated Successfully ", data = {})=>{
+const sendupdate  = (res, masg = "Updated Successfully ", data = {}, meta={})=>{
     return res.status(201).json({
         success :  true,
         masg,
-        data
+        data,
+        meta: meta ?? {imagebaseurl:"http://localhost:5000/category" }
     })
 }
 
