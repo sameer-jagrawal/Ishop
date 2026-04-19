@@ -31,29 +31,25 @@ const productSchema = new mongoose.Schema(
     final_price: {
       type: Number,
     },
-    thumbnail:{
-        type : String,
-        default : null
+    thumbnail: {
+      type: String,
+      default: null,
     },
-    image: [    
+    images: [
       {
         type: String,
       },
     ],
-    categoryId: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "categories",
-        default: [],
-      },
-    ],
-    brandId: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "Brand",
-        default: [],
-      },
-    ],
+    categoryId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Category",
+      required: true,
+    },  
+    brandId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Brand",
+      required: true,
+    },
     colorId: [
       {
         type: mongoose.Schema.Types.ObjectId,
@@ -65,11 +61,27 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
-    top_selling: {
+    is_home: {
       type: Boolean,
       default: true,
     },
     status: {
+      type: Boolean,
+      default: true,
+    },
+    is_top: {
+      type: Boolean,
+      default: true,
+    },
+    is_hot: {
+      type: Boolean,
+      default: true,
+    },
+    is_best: {
+      type: Boolean,
+      default: true,
+    },
+    is_popular: {
       type: Boolean,
       default: true,
     },

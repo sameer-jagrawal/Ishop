@@ -40,7 +40,7 @@ const BrandSchema = new mongoose.Schema(
     categoryId:[
       {
         type : mongoose.Schema.Types.ObjectId,
-        ref : "categories",
+        ref : "Category",
         default : []
       }
     ]
@@ -48,7 +48,7 @@ const BrandSchema = new mongoose.Schema(
   {
     timestamps: true,
   },
-);
+);  
 
 const BrandModel = mongoose.model("Brand", BrandSchema);
 
