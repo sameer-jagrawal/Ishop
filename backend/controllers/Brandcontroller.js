@@ -47,8 +47,16 @@ const create = async (req,res) => {
 // read api
 const read = async (req,res)=>{
     try {
+
+      const query = req.query
+        const filter = {}
+        if(query.status) filter.status = query.status === "true";
+        if(query.is_home) filter.is_home = query.is_home === "true";
+        if(query.is_top) filter.is_top = query.is_top === "true";
+        if(query.is_popular) filter.is_popular = query.is_popular === "true";
+        if(query.id) filter._id = query._id === "true";
         // console.log(req.body)
-        const brand = await BrandModel.find().populate("categoryId");
+        const brand = await BrandModel.find(filter).populate("categoryId");
         const total = await BrandModel.countDocuments()
      
             return sendSuccess(res,"success",brand,{

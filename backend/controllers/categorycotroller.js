@@ -34,7 +34,17 @@ const create = async (req,res)=>{
 const read = async (req,res)=>{
     try {
         // console.log(req.body)
-        const category = await categoryModel.find()
+        const query = req.query
+        const filter = {}
+        const limit = parseInt(query.limit) || 10
+        if(query.status) filter.status = query.status === "true";
+        if(query.is_home) filter.is_home = query.is_home === "true";
+        if(query.is_top) filter.is_top = query.is_top === "true";
+        if(query.is_popular) filter.is_popular = query.is_popular === "true";
+        if(query.id) filter._id = query._id === "true";
+
+
+        const category = await categoryModel.find(filter).limit(limit)
         const total = await categoryModel.countDocuments()
         console.log(category)
         if(category){

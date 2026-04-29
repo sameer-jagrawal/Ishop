@@ -33,8 +33,12 @@ const create = async (req, res) => {
 
 const read = async (req, res) => {
   try {
+    const query = req.query
+    const filter = {}
+    if(query.status) filter.status = query.status === "true";
+    if(query.id) filter._id = query.id
     // console.log(req.body)
-    const color = await ColorModel.find();
+    const color = await ColorModel.find(filter);
     const total = await ColorModel.countDocuments();
 
     return sendSuccess(res, "success", color, {

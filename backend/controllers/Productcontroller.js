@@ -11,6 +11,9 @@ const {
   sendDelete,
   sendNotFound,
 } = require("../utils/response");
+const categoryModel = require("../models/CategoryModel");
+const BrandModel = require("../models/BrandModel");
+const ColorModel = require("../models/ColorModel");
 
 // create api
 const create = async (req, res) => {
@@ -112,9 +115,15 @@ const create = async (req, res) => {
       discount_percentage,
       original_price,
     });
+    const imageBaseUrl = "http://localhost:5000/product/";
     const plainData = data.toObject();
-    console.log("Plain object categoryId:", plainData.categoryId);
-    return sendSuccess(res, "Product created sucessfully", plainData);
+    // console.log("Plain object categoryId:", plainData.categoryId);
+    return sendSuccess(
+      res,
+      "Product created sucessfully",
+      plainData,
+      imageBaseUrl,
+    );
     // return res.status(200).json({ success: true, data: plainData });
   } catch (error) {
     console.error("Product creation error:", error);
@@ -125,16 +134,96 @@ const create = async (req, res) => {
 
 // edit updateBySlug
 
-
 // read api
 const read = async (req, res) => {
   try {
-    const data = await ProductModel.find().populate([
-      "categoryId",
-      "brandId",
-      "colorId",
+    //     console.log("RAW QUERY:", req.query);
+    // console.log("TYPE:", typeof req.query.brand_slug);
+    const query = req.query;
+    const filter = {};
+    const limit = parseInt(query.limit) || 10;
+    const page = query.pages || 1;
+    const skip = parseInt((page - 1) * limit);
+    if (query.status) filter.status = query.status === "true";
+    if (query.is_home) filter.is_home = query.is_home === "true";
+    if (query.is_top) filter.is_top = query.is_top === "true";
+    if (query.is_popular) filter.is_popular = query.is_popular === "true";
+    if (query.is_best) filter.is_best = query.is_best === "true";
+    if (query.is_hot) filter.is_hot = query.is_hot === "true";
+    if (query.id) filter._id = query._id === "true";
+    // for category
+    if (query.category_slug) {
+      const category = await categoryModel.findOne({
+        slug: query.category_slug,
+      });
+      filter.categoryId = category._id;
+    }
+    // for brand
+    if (query.brand_slug) {
+      let brandSlugs = [];
+
+      if (typeof query.brand_slug === "string") {
+        brandSlugs = query.brand_slug.split(",");
+      } else if (Array.isArray(query.brand_slug)) {
+        brandSlugs = query.brand_slug;
+      }
+
+      const brands = await BrandModel.find({
+        slug: { $in: brandSlugs },
+      });
+
+      const brandIds = brands.map((b) => b._id);
+
+      // console.log("brandIds:", brandIds);
+
+      if (brandIds.length > 0) {
+        filter.brandId = { $in: brandIds };
+      }
+    }
+
+    // for color
+    if (query.color_slug) {
+      let color_slug = [];
+
+      if (typeof query.color_slug == "string") {
+        color_slug = query.color_slug.split(",");
+      } else if (Array.isArray(query.color_slug)) {
+        color_slug = query.color_slug;
+      }
+      color_slug = color_slug.map(slug => slug.trim()).filter(Boolean);
+
+      const colors = await ColorModel.find({
+        slug: { $in: color_slug },
+      });
+
+      const colorIds = colors.map((c) => c._id);
+
+      if (colorIds.length > 0) {
+        filter.colorId = { $in: colorIds };
+      }
+    }
+
+    // for price
+    if(query.min_price && query.max_price){
+      filter.final_price = {
+        $gte : parseInt(query.min_price),
+        $lte : parseInt(query.max_price)
+      }
+    }
+    const [total, product] = await Promise.all([
+      ProductModel.find().countDocuments(),
+      ProductModel.find(filter)
+        .skip(skip)
+        .limit(limit)
+        .populate(["categoryId", "brandId", "colorId"]),
     ]);
-    sendSuccess(res, "Product find succesfully", data);
+
+    sendSuccess(res, "Product find succesfully", product, {
+      total,
+      limit,
+      pages: Math.ceil(total / limit),
+      imageBaseUrl: "http//localhost:5000/public/product",
+    });
   } catch (error) {
     sendServerError(res);
   }
@@ -164,7 +253,7 @@ const readById = async (req, res) => {
 const readBySlug = async (req, res) => {
   try {
     const slug = req.params.slug;
-   const product = await ProductModel.findOne({slug:slug}).populate([
+    const product = await ProductModel.findOne({ slug: slug }).populate([
       "categoryId",
       "brandId",
       "colorId",
@@ -173,11 +262,11 @@ const readBySlug = async (req, res) => {
       return sendSuccess(res, "Product Found Successfully", product, {
         image: "http://localhost:5000/product",
       });
-    }else {
+    } else {
       return sendNotFound(res, "Product not found");
-  }
+    }
   } catch (error) {
-    sendServerError(res,error.message);
+    sendServerError(res, error.message);
   }
 };
 
@@ -206,14 +295,11 @@ const deleteById = async (req, res) => {
 
 // delete images
 
-
-
-
 const deleteImage = async (req, res) => {
   try {
     const { slug } = req.params;
     const { image_name } = req.body;
-    console.log(image_name)
+    console.log(image_name);
 
     const product = await ProductModel.findOne({ slug });
     if (!product) {
@@ -224,16 +310,16 @@ const deleteImage = async (req, res) => {
     await ProductModel.findOneAndUpdate(
       { slug },
       { $pull: { images: image_name } },
-      { new: true }
+      { new: true },
     );
 
     // Delete file from storage
-    fs.unlink(`./public/product/${image_name}`,(error)=>{
-      if(error) {
-        return sendBadReaquest(res,"Unable to delete image")
-      } 
-      return sendSuccess(res,"Image deleted successfully")
-    })
+    fs.unlink(`./public/product/${image_name}`, (error) => {
+      if (error) {
+        return sendBadReaquest(res, "Unable to delete image");
+      }
+      return sendSuccess(res, "Image deleted successfully");
+    });
   } catch (error) {
     return sendServerError(res, "Internal server error");
   }
@@ -288,11 +374,17 @@ const updateDataBySlug = async (req, res) => {
       long_description,
     } = req.body;
 
-    console.log(req?.body?.name)
+    console.log(req?.body?.name);
     const images = req.files?.images;
     const thumbnailFile = req.files?.thumbnail;
 
-    if (!name || !categoryId || !brandId || !short_description || !long_description) {
+    if (
+      !name ||
+      !categoryId ||
+      !brandId ||
+      !short_description ||
+      !long_description
+    ) {
       return sendBadReaquest(res, "All fields required");
     }
 
@@ -375,7 +467,7 @@ const updateDataBySlug = async (req, res) => {
     const updated = await ProductModel.findOneAndUpdate(
       { slug },
       updateObject,
-      { new: true }
+      { new: true },
     );
 
     return sendSuccess(res, "Data updated successfully", updated);
@@ -386,5 +478,13 @@ const updateDataBySlug = async (req, res) => {
   }
 };
 
-
-module.exports = { create, read, deleteById, updateById, readById,updateDataBySlug,readBySlug,deleteImage  };
+module.exports = {
+  create,
+  read,
+  deleteById,
+  updateById,
+  readById,
+  updateDataBySlug,
+  readBySlug,
+  deleteImage,
+};
