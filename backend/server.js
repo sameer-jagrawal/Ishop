@@ -10,6 +10,8 @@
  app.use("/api/brand", require("./routers/brand.router"))
  app.use("/api/color", require("./routers/color.router"))
  app.use("/api/product", require("./routers/product.router"))
+ app.use("/api/user", require("./routers/user.router"))
+
 
 
 

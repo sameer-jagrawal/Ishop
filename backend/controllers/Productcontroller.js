@@ -140,6 +140,7 @@ const read = async (req, res) => {
     //     console.log("RAW QUERY:", req.query);
     // console.log("TYPE:", typeof req.query.brand_slug);
     const query = req.query;
+    const sorted = {}
     const filter = {};
     const limit = parseInt(query.limit) || 10;
     const page = query.pages || 1;
@@ -210,10 +211,24 @@ const read = async (req, res) => {
         $lte : parseInt(query.max_price)
       }
     }
+    
+    //for sort
+
+    const sortOption = query.sort?.toLowerCase();
+
+    if(sortOption === "asc"){
+      sorted.final_price = 1
+    }
+    else if(sortOption === "desc"){
+      sorted.final_price = -1
+    } else {
+      sorted.createAt = -1
+    }
     const [total, product] = await Promise.all([
       ProductModel.find().countDocuments(),
       ProductModel.find(filter)
         .skip(skip)
+        .sort(sorted)
         .limit(limit)
         .populate(["categoryId", "brandId", "colorId"]),
     ]);
@@ -266,6 +281,7 @@ const readBySlug = async (req, res) => {
       return sendNotFound(res, "Product not found");
     }
   } catch (error) {
+    console.log(error)
     sendServerError(res, error.message);
   }
 };
