@@ -1,5 +1,5 @@
 const BrandRouter = require("express").Router();
-
+const {protect,authorized} = require("../middleware/auth")
 const {
   create,
   read,
@@ -11,12 +11,13 @@ const fileUploader = require("express-fileupload");
 BrandRouter.post(
   "/create",
   fileUploader({ createParentPath: true }),
+  protect,authorized(["admin","superAdmin"]),
   create,
 );
 BrandRouter.get("/", read);
 BrandRouter.get("/:slug", readBySlug);
-BrandRouter.delete("/delete/:id", deleteById)
-BrandRouter.put("/edit/:slug",fileUploader({ createParentPath: true }),updateDataBySlug,);
+BrandRouter.delete("/delete/:id",protect,authorized(["admin","superAdmin"]), deleteById)
+BrandRouter.put("/edit/:slug",fileUploader({ createParentPath: true }),protect,authorized(["admin","superAdmin"]),updateDataBySlug,);
 
 
 

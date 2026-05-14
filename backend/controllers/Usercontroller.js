@@ -3,6 +3,7 @@ const Cryptr = require('cryptr');
 const cryptr = new Cryptr(process.env.SECREAT_KEY)
 const { sendBadReaquest, sendConflict, sendCreated, sendNotFound, sendServerError, sendSuccess } = require("../utils/response");
 const sendOtpMail = require("../utils/sendOtpMail");
+const generateToke = require("../utils/jwt")
 
 
 // create api
@@ -71,31 +72,40 @@ const login = async (req,res) => {
       return sendBadReaquest(res,"All feilds required")
     }
 
-    const userExists = await UserModel.findOne({email})
+    const user = await UserModel.findOne({email})
     
-    if(!userExists){
+    if(!user){
       return sendNotFound(
          res,
          "User not found"
       )
    }
    
-   if(userExists.isVerified === false){
+   if(user.isVerified === false){
       return sendBadReaquest(
          res,
          "Please verify your email first"
       )
    }
 
-  const userPassword  = userExists.password
+  const userPassword  = user.password
 
   const decryptedPassword = cryptr.decrypt(userPassword);
 
   if(decryptedPassword !== password) {
     return sendBadReaquest(res,"Invalid Password")
   }
+
+  const token = generateToke(user._id)
   
-    return sendSuccess(res,`Welcome Back ${userExists.name}`,{id:userExists._id, name:userExists.name, email:userExists.email})
+  res.cookie('jwt', token, {
+    maxAge: 30*24*60*60*1000, // 1 hour
+    httpOnly: true,
+    secure: false,
+    sameSite: 'strict'
+  });
+  
+    return sendSuccess(res,`Welcome Back ${user.name}`,{id:user._id, name:user.name, email:user.email,role:user.role})
 
   } catch (error) {
       console.log(error)
@@ -122,4 +132,68 @@ const resendOtp = async(req,res) => {
   }
 }
 
-module.exports = {register,verifyOtp,login}
+// getMe
+const getMe = (req,res) => {
+  try {
+    const user = req.user
+    sendSuccess(res,"user find successfully",user)
+   
+  } catch (error) {
+    console.log(error)
+    return sendServerError(res)
+  }
+}
+
+//logOut
+const logOut = (req,res) => {
+  try {
+    res.cookie('jwt')
+    return sendSuccess(res,"User Logout Succesfully")
+   
+  } catch (error) {
+    console.log(error)
+    return sendServerError(res)
+  }
+}
+
+// address
+const address = async (req,res) => {
+  try {
+
+    const user_id = req.user._id
+
+    const address  = req.body;
+    const user = await UserModel.findById(user_id)
+    user.addresses.push(address)
+    
+    await user.save();
+    sendSuccess(res,"Address added successfully",{address:user.address})
+
+  } catch (error) {
+    console.log(error)
+    sendServerError(res,)
+  }
+}
+
+// deleteAddress 
+
+const deleteAddress = async(req,res) => {
+  try {
+    console.log(req.body,"user address delete")
+    const user = req.user;
+
+    const addressId = req.params.id;
+
+    user.addresses = user.addresses.filter((item)=>(item._id.toString() !== addressId));
+    
+    await  user.save()
+
+    return sendSuccess(res,"Address deleted Successfully",user.addresses)
+
+  } catch (error) {
+    console.log(error)
+    sendServerError(res)
+  }
+}
+
+module.exports = {register,verifyOtp,login,getMe,address,deleteAddress}

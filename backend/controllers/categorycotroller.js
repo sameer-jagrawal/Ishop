@@ -1,13 +1,14 @@
 const categoryModel = require("../models/CategoryModel");
 const {sendBadReaquest,sendConflict,sendCreated,sendDelete,sendNotFound,sendServerError,sendSuccess,sendupdate} = require("../utils/response")
 const {imageName,} = require("../utils/helper")
-// console.log(categoryModel)
+
 // create api
 const create = async (req,res)=>{
     try {
+        // console.log(req.cookies,"cookies")
         const {name,slug} = req.body;
         const image = req.files?.image;
-        console.log(image)
+        // console.log(image)
         if(!name || !slug || !image){
             return sendBadReaquest(res,"All feild are required")
         }
@@ -25,7 +26,7 @@ const create = async (req,res)=>{
         })
       
     } catch (error) {
-        console.log(error)
+        // console.log(error)
         return sendServerError(res, "Something went wrong");
     }
 }
@@ -46,12 +47,11 @@ const read = async (req,res)=>{
 
         const category = await categoryModel.find(filter).limit(limit)
         const total = await categoryModel.countDocuments()
-        console.log(category)
+        // console.log(category)
         if(category){
             return sendSuccess(res,"success",category,{
             total,
-            imagebaseurl : "http://localhost:5000/category/"
-            })
+            },{imagebaseurl: "http://localhost:5000/category/"})
         }
 
     } catch (error) {
@@ -65,7 +65,7 @@ const readById = async (req,res)=>{
     try {
         const id = req.params.id 
         const category = await categoryModel.findById(id)
-        console.log(category)
+        // console.log(category)
         if(category){
             return sendSuccess(res, "category find", category)
         } 
@@ -112,7 +112,7 @@ const updateById = async (req,res)=>{
 
         sendupdate(res,"status updated successfully",newRecord)
     } catch (error) {
-        console.log(error)
+        // console.log(error)
         return sendServerError(res,)
     }
 }
@@ -166,7 +166,7 @@ const updateDataBySlug = async (req, res) => {
       });
   
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       return sendServerError(res, "Something went wrong");
     }
   };

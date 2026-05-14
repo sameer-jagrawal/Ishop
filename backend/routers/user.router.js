@@ -1,9 +1,12 @@
 const UserRouter = require("express").Router();
-
+const {protect} = require("../middleware/auth")
 const {
   register,
   verifyOtp,
-  login
+  login,
+  getMe,
+  address,
+  deleteAddress,
 } = require("../controllers/Usercontroller");
 
 UserRouter.post(
@@ -12,6 +15,9 @@ UserRouter.post(
 );
 UserRouter.post("/verify-otp",verifyOtp);
 UserRouter.post("/login",login)
+UserRouter.get("/get",protect,getMe)
+UserRouter.post("/address",protect,address)
+UserRouter.delete("/address/delete/:id",protect,deleteAddress)
 
 
 

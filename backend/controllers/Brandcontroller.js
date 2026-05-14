@@ -29,7 +29,7 @@ const create = async (req,res) => {
       if (!Array.isArray(categoryId) || categoryId.length === 0) {
         return sendBadReaquest(res, "Category required");
       }
-        console.log(categoryId)
+        // console.log(categoryId)
         const imagename = imageName(image.name)
         const destination = `./public/brand/${imagename}`;
         image.mv(destination, async (error)=>{
@@ -40,7 +40,7 @@ const create = async (req,res) => {
 
 
     } catch (error) {
-        console.log(error)
+        // console.log(error)
     }
 }
 
@@ -93,7 +93,7 @@ const deleteById = async (req, res) => {
         return sendDelete(res, "deleted succesfully");
 
     } catch (error) {
-        console.error("DELETE ERROR:", error);
+        // console.error("DELETE ERROR:", error);
         return res.status(500).json({ message: error.message });
     }
 };
@@ -160,7 +160,7 @@ const updateDataBySlug = async (req, res) => {
       });
   
     } catch (error) {
-      console.log(error);
+      // console.log(error);
       return sendServerError(res, "Something went wrong");
     }
   };
@@ -186,4 +186,3 @@ const readBySlug = async (req, res) => {
 
 
 module.exports = {create,read,deleteById,updateDataBySlug,readBySlug}
-    

@@ -126,7 +126,7 @@ const create = async (req, res) => {
     );
     // return res.status(200).json({ success: true, data: plainData });
   } catch (error) {
-    console.error("Product creation error:", error);
+    // console.error("Product creation error:", error);
     // Always send an error response to the client
     return sendServerError(res, error.message || "Internal Server Error", 500);
   }
@@ -151,7 +151,7 @@ const read = async (req, res) => {
     if (query.is_popular) filter.is_popular = query.is_popular === "true";
     if (query.is_best) filter.is_best = query.is_best === "true";
     if (query.is_hot) filter.is_hot = query.is_hot === "true";
-    if (query.id) filter._id = query._id === "true";
+    if (query.id) filter._id = query.id;
     // for category
     if (query.category_slug) {
       const category = await categoryModel.findOne({
@@ -222,7 +222,7 @@ const read = async (req, res) => {
     else if(sortOption === "desc"){
       sorted.final_price = -1
     } else {
-      sorted.createAt = -1
+      sorted.createdAt = -1
     }
     const [total, product] = await Promise.all([
       ProductModel.find().countDocuments(),
@@ -281,7 +281,7 @@ const readBySlug = async (req, res) => {
       return sendNotFound(res, "Product not found");
     }
   } catch (error) {
-    console.log(error)
+    // console.log(error)
     sendServerError(res, error.message);
   }
 };
@@ -304,7 +304,7 @@ const deleteById = async (req, res) => {
 
     return sendDelete(res, "deleted succesfully");
   } catch (error) {
-    console.error("DELETE ERROR:", error);
+    // console.error("DELETE ERROR:", error);
     return res.status(500).json({ message: error.message });
   }
 };
@@ -315,7 +315,7 @@ const deleteImage = async (req, res) => {
   try {
     const { slug } = req.params;
     const { image_name } = req.body;
-    console.log(image_name);
+    // console.log(image_name);
 
     const product = await ProductModel.findOne({ slug });
     if (!product) {
@@ -369,7 +369,7 @@ const updateById = async (req, res) => {
 
     sendupdate(res, "status updated successfully", newRecord);
   } catch (error) {
-    console.log(error);
+    // console.log(error);
     return sendServerError(res);
   }
 };
@@ -390,7 +390,7 @@ const updateDataBySlug = async (req, res) => {
       long_description,
     } = req.body;
 
-    console.log(req?.body?.name);
+    // console.log(req?.body?.name);
     const images = req.files?.images;
     const thumbnailFile = req.files?.thumbnail;
 
@@ -488,7 +488,7 @@ const updateDataBySlug = async (req, res) => {
 
     return sendSuccess(res, "Data updated successfully", updated);
   } catch (error) {
-    console.error("Product creation error:", error);
+    // console.error("Product creation error:", error);
     // Always send an error response to the client
     return sendServerError(res, error.message || "Internal Server Error", 500);
   }
