@@ -140,7 +140,7 @@ const read = async (req, res) => {
     //     console.log("RAW QUERY:", req.query);
     // console.log("TYPE:", typeof req.query.brand_slug);
     const query = req.query;
-    const sorted = {}
+    const sorted = {};
     const filter = {};
     const limit = parseInt(query.limit) || 10;
     const page = query.pages || 1;
@@ -191,7 +191,7 @@ const read = async (req, res) => {
       } else if (Array.isArray(query.color_slug)) {
         color_slug = query.color_slug;
       }
-      color_slug = color_slug.map(slug => slug.trim()).filter(Boolean);
+      color_slug = color_slug.map((slug) => slug.trim()).filter(Boolean);
 
       const colors = await ColorModel.find({
         slug: { $in: color_slug },
@@ -205,24 +205,23 @@ const read = async (req, res) => {
     }
 
     // for price
-    if(query.min_price && query.max_price){
+    if (query.min_price && query.max_price) {
       filter.final_price = {
-        $gte : parseInt(query.min_price),
-        $lte : parseInt(query.max_price)
-      }
+        $gte: parseInt(query.min_price),
+        $lte: parseInt(query.max_price),
+      };
     }
-    
+
     //for sort
 
     const sortOption = query.sort?.toLowerCase();
 
-    if(sortOption === "asc"){
-      sorted.final_price = 1
-    }
-    else if(sortOption === "desc"){
-      sorted.final_price = -1
+    if (sortOption === "asc") {
+      sorted.final_price = 1;
+    } else if (sortOption === "desc") {
+      sorted.final_price = -1;
     } else {
-      sorted.createdAt = -1
+      sorted.createdAt = -1;
     }
     const [total, product] = await Promise.all([
       ProductModel.find().countDocuments(),
@@ -359,6 +358,7 @@ const updateById = async (req, res) => {
       "is_popular",
       "is_home",
       "is_hot",
+      "is_return",
     ];
     if (!feilds.includes(feild)) {
       return sendBadReaquest(res);

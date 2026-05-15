@@ -10,68 +10,97 @@ const instance = new Razorpay({
 })
 
 // order create
-const orderCreate = async (req,res) => {
-
+const orderCreate = async (req, res) => {
     try {
-        const userId = req.user._id
-        const { paymentMethod, address } = req.body
-        const userCart = await CartModel.findOne({userId}).populate({
-            path: "items.productId",
-            select: "_id final_price"
-        })
-
-        if (!userCart || userCart.items.length === 0) {
-            return res.status(400).json({
-              success: false,
-              message: "Cart is empty"
-            });
+      const userId = req.user._id;
+      const { paymentMethod, address } = req.body;
+  
+      const userCart = await CartModel.findOne({ userId }).populate({
+        path: "items.productId",
+        select: "_id final_price",
+      });
+  
+      if (!userCart || userCart.items.length === 0) {
+        return res.status(400).json({
+          success: false,
+          message: "Cart is empty",
+        });
+      }
+  
+      const productDetails = userCart.items.map((item) => {
+        const { _id, final_price } = item.productId;
+  
+        return {
+          product_id: _id,
+          qty: item.qty,
+          price: final_price,
+          total: final_price * item.qty,
+        };
+      });
+  
+      const total_Amount = productDetails.reduce(
+        (sum, item) => sum + item.total,
+        0
+      );
+  
+      const order = await OrderModel.create({
+        user: userId,
+        items: productDetails,
+        shippingAddress: address,
+        paymentMethod,
+        totalAmount: total_Amount,
+        paymentStatus: "pending",
+      });
+  
+      // COD
+      if (paymentMethod === "cod") {
+        return sendSuccess(
+          res,
+          "Order created successfully",
+          {
+            orderId: order._id,
           }
-      
-        const productDetails = userCart.items.map((item)=>{
-            const { _id, final_price } = item.productId
-            return{
-                product_id: _id,
-                qty: item.qty,
-                price: final_price,
-                total: (final_price * item.qty)
-            }
-        })
-        const total_Amount = productDetails.reduce((sum, item) => sum + item.total, sum = 0);
-        
-        const order = await OrderModel.create({
-            user: userId,
-            items: productDetails,
-            shippingAddress: address,
-            paymentMethod,
-            totalAmount: total_Amount,
-            paymentStatus: "pending"
-        })
+        );
+      }
+  
+      // ONLINE PAYMENT
+      if (paymentMethod === "online") {
+        const options = {
+          amount: Math.round(total_Amount * 100),
+          currency: "INR",
+          receipt: order._id.toString(),
+        };
+  
+        const orderRazorpay = await instance.orders.create(options);
+  
+        order.razorpay_order_id = orderRazorpay.id;
+  
+        await order.save();
+  
+        return sendSuccess(
+          res,
+          "Payment created successfully",
+          {
+            orderId: order._id,
+            payment_order_Id: orderRazorpay.id,
+          }
+        );
+      }
 
-        if (paymentMethod === "cod") {
-            //COD
-           return sendSuccess(res,"Order created successfully",{ orderId: order._id})
-        }else if(paymentMethod === "online"){
-            let options = {
-                amount: total_Amount * 100,
-                currency: "INR",
-                receipt:order._id
-              };
-              instance.orders.create(options, function (err, orderRazorpay) {
-                if(err){
-                    console.log(err)
-                 return sendServerError(res,"Something went wrong")
-
-                }
-                order.razorpay_order_id = orderRazorpay.id
-                 order.save()
-                sendSuccess(res,"Payment successfully",{ orderId: order._id,
-                    payment_order_Id: orderRazorpay.id})
-              });
-        }
+      return res.status(400).json({
+        success: false,
+        message: "Invalid payment method",
+      });
+  
     } catch (error) {
-        console.log(error)
+      console.log(error);
+  
+      return res.status(500).json({
+        success: false,
+        message: error?.error?.description || error?.message || "Server error",
+      });
     }
-}
+  };
 
 // payment verify
 const paymentVerify = async (req, res) => {
@@ -84,6 +113,13 @@ const paymentVerify = async (req, res) => {
 
 
         const order = await OrderModel.findOne({ razorpay_order_id: razorpay_order_id })
+
+        if (!order) {
+            return res.status(404).json({
+                success: false,
+                message: "Order not found",
+            });
+        }
 
         // STEP 1: Create expected signature
         const body = razorpay_order_id + "|" + razorpay_payment_id;
@@ -100,6 +136,7 @@ const paymentVerify = async (req, res) => {
             // Yaha DB me order update karo (paid = true)
             order.razorpay_payment_id = razorpay_payment_id;
             order.paymentStatus = "paid";
+            order.paidAt = new Date();
             await order.save();
 
 

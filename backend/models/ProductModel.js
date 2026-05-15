@@ -16,7 +16,6 @@ const productSchema = new mongoose.Schema(
     },
     short_description: {
       type: String,
-      maxLength: 200,
     },
     long_description: {
       type: String,
@@ -85,6 +84,11 @@ const productSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+    is_return : {
+      type : Boolean,
+      default : false
+    }
+    
   },
   {
     timestamps: true,
