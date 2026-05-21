@@ -66,7 +66,7 @@ const verifyOtp = async (req,res) => {
 const login = async (req,res) => {
   try {
     const { email, password } = req.body;
-    console.log(password,"values")
+    // console.log(password,"values")
     
     if(  !email || !password) {
       return sendBadReaquest(res,"All feilds required")
@@ -98,14 +98,20 @@ const login = async (req,res) => {
 
   const token = generateToke(user._id)
   
-  res.cookie('jwt', token, {
-    maxAge: 30*24*60*60*1000, // 1 hour
+  res.cookie("jwt", token, {
+    maxAge: 30 * 24 * 60 * 60 * 1000,
     httpOnly: true,
-    secure: false,
-    sameSite: 'strict'
+    secure: true,
+    sameSite: "none",
   });
   
-    return sendSuccess(res,`Welcome Back ${user.name}`,{id:user._id, name:user.name, email:user.email,role:user.role})
+    return sendSuccess(res,`Welcome Back ${user.name}`,{
+      id:user._id,
+      name:user.name,
+      email:user.email,
+      role:user.role,
+      token,
+    })
 
   } catch (error) {
       console.log(error)

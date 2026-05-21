@@ -12,6 +12,7 @@ const instance = new Razorpay({
 // order create
 const orderCreate = async (req, res) => {
     try {
+      // console.log(req,"order request")
       const userId = req.user._id;
       const { paymentMethod, address } = req.body;
   
@@ -70,9 +71,32 @@ const orderCreate = async (req, res) => {
           currency: "INR",
           receipt: order._id.toString(),
         };
+
+        if (!total_Amount || total_Amount <= 0) {
+          return res.status(400).json({
+            success: false,
+            message: "Invalid order amount",
+          });
+        }
   
-        const orderRazorpay = await instance.orders.create(options);
-  
+        let orderRazorpay;
+
+        try {
+        
+          orderRazorpay = await instance.orders.create(options);
+        
+        } catch (razorError) {
+        
+          console.log("RAZORPAY ERROR:", razorError);
+        
+          return res.status(500).json({
+            success: false,
+            message:
+              razorError?.error?.description ||
+              razorError?.message ||
+              "Razorpay order creation failed",
+          });
+        }
         order.razorpay_order_id = orderRazorpay.id;
   
         await order.save();
@@ -172,7 +196,7 @@ const getAllOrders = async(req,res) => {
         .populate("items.product_id", "_id name price thumbnail")
         .sort({ createdAt: -1 });
         
-        return sendSuccess(res,"Orders fetched successfully",{orders,imageBaseUrl: "http//localhost:5000/public/product/"})
+        return sendSuccess(res,"Orders fetched successfully",{orders,imageBaseUrl: "https://ishop-backend-2mld.onrender.com/product/"})
     } catch (error) {
         console.log(error)
         sendServerError(res,)
@@ -192,7 +216,7 @@ const getSingleOrder = async(req,res) => {
         }
         
         
-        return sendSuccess(res,"Orders fetched successfully",{order,imageBaseUrl: "http://localhost:5000/public/product/"})
+        return sendSuccess(res,"Orders fetched successfully",{order,imageBaseUrl:"https://ishop-backend-2mld.onrender.com/product"})
     } catch (error) {
         console.log(error)
         sendServerError(res,)
